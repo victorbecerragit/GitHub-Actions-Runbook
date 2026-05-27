@@ -3,13 +3,15 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: GitHub Actions Runbook API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: runbooks
+    description: Runbook operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,173 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /runbooks:
+    get:
+      operationId: listRunbooks
+      tags: [runbooks]
+      summary: List runbooks
+      description: List all runbooks, with optional search and filter
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Full-text search across title, system, steps
+        - name: system
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by system name
+        - name: severity
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [low, medium, high, critical]
+          description: Filter by severity level
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by tag
+      responses:
+        "200":
+          description: List of runbooks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Runbook"
+    post:
+      operationId: createRunbook
+      tags: [runbooks]
+      summary: Create a runbook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunbookInput"
+      responses:
+        "201":
+          description: Created runbook
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Runbook"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /runbooks/seed:
+    post:
+      operationId: seedRunbooks
+      tags: [runbooks]
+      summary: Seed example runbooks
+      description: Inserts 5 example runbooks if none exist
+      responses:
+        "200":
+          description: Seed result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeedResult"
+
+  /runbooks/stats:
+    get:
+      operationId: getRunbookStats
+      tags: [runbooks]
+      summary: Runbook statistics
+      description: Returns counts by severity and system
+      responses:
+        "200":
+          description: Stats summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunbookStats"
+
+  /runbooks/{id}:
+    get:
+      operationId: getRunbook
+      tags: [runbooks]
+      summary: Get a runbook by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Runbook
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Runbook"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateRunbook
+      tags: [runbooks]
+      summary: Update a runbook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunbookUpdate"
+      responses:
+        "200":
+          description: Updated runbook
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Runbook"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteRunbook
+      tags: [runbooks]
+      summary: Delete a runbook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +203,103 @@ components:
       required:
         - status
 
+    Runbook:
+      type: object
+      required: [id, title, system, severity, steps, rollback, tags, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        system:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        steps:
+          type: string
+        rollback:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    RunbookInput:
+      type: object
+      required: [title, system, severity, steps, rollback]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        system:
+          type: string
+          minLength: 1
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        steps:
+          type: string
+        rollback:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    RunbookUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        system:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        steps:
+          type: string
+        rollback:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    RunbookStats:
+      type: object
+      required: [total, bySeverity, bySystem]
+      properties:
+        total:
+          type: integer
+        bySeverity:
+          type: object
+          additionalProperties:
+            type: integer
+        bySystem:
+          type: object
+          additionalProperties:
+            type: integer
+
+    SeedResult:
+      type: object
+      required: [inserted, message]
+      properties:
+        inserted:
+          type: integer
+        message:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
