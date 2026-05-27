@@ -1,11 +1,12 @@
 import { Layout } from "@/components/layout";
 import { useGetRunbook, useDeleteRunbook, getListRunbooksQueryKey, getGetRunbookStatsQueryKey } from "@workspace/api-client-react";
 import { useParams, useLocation, Link } from "wouter";
-import { ArrowLeft, Edit, Trash2, Clock, Terminal, AlertTriangle, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Clock, Terminal, AlertTriangle, ShieldCheck, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SeverityBadge } from "./runbook-list";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +25,14 @@ export function RunbookDetail() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [copied, setCopied] = useState(false);
+
+  const handleCopySteps = (steps: string) => {
+    navigator.clipboard.writeText(steps).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
   
   const { data: runbook, isLoading, isError } = useGetRunbook(Number(id), {
     query: {
@@ -137,9 +146,23 @@ export function RunbookDetail() {
 
           <div className="flex flex-col gap-8">
             <div className="space-y-3">
-              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                <Terminal className="h-4 w-4" /> Execution Steps
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                  <Terminal className="h-4 w-4" /> Execution Steps
+                </h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleCopySteps(runbook.steps)}
+                  className="h-7 text-[11px] rounded-sm border-border bg-transparent hover:bg-muted/50 font-mono gap-1.5"
+                >
+                  {copied ? (
+                    <><Check className="h-3 w-3 text-green-500" /> Copied</>
+                  ) : (
+                    <><Copy className="h-3 w-3" /> Copy</>
+                  )}
+                </Button>
+              </div>
               <div className="bg-[#0f1420] border border-border p-4 rounded-md overflow-x-auto">
                 <pre className="text-sm text-foreground whitespace-pre-wrap font-mono leading-relaxed">
                   {runbook.steps}
