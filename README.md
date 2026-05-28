@@ -91,6 +91,22 @@ artifacts/
 
 ---
 
+## Deployment flow
+
+The frontend is built and deployed to GitHub Pages, while the API and database run on Cloudflare Workers + D1. The frontend reads the live API through `VITE_API_BASE_URL`, and the Worker uses CORS to allow the GitHub Pages origin to fetch data safely.
+
+This setup keeps the demo public for reads, while write routes remain protected with `ADMIN_API_TOKEN`.
+
+---
+
+## CORS and GitHub Pages
+
+The frontend runs on GitHub Pages and the API runs on Cloudflare Workers, so the browser treats them as different origins. The Worker allows requests from `https://victorbecerragit.github.io` and sends the CORS headers needed for the browser to read API responses.
+
+This is why the demo can read runbooks from the Worker, while write routes still require `ADMIN_API_TOKEN`. `curl` works independently of CORS because browser restrictions do not apply there.
+
+---
+
 ## Cloudflare Worker + D1 (Primary Setup and Deployment)
 
 Prerequisites: Node.js 24, pnpm 9+, Cloudflare account, Wrangler authenticated.
@@ -170,6 +186,7 @@ curl -sS "$WORKER_URL/api/healthz"
 # Create
 curl -sS -X POST "$WORKER_URL/api/runbooks" \
   -H 'Content-Type: application/json' \
+  -H "x-admin-token: $ADMIN_TOKEN" \
   --data '{"title":"Deploy verify","system":"Cloudflare Workers","severity":"low","steps":"1. verify create","rollback":"1. delete record","tags":["verify","deploy"]}'
 
 # Search
