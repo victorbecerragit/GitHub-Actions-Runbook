@@ -8,6 +8,6 @@ compatibility_date = "2026-05-27"
 binding = "DB"
 database_name = "runbook-d1"
 # TODO: Replace with your real D1 database id from `wrangler d1 create`.
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "51c9ee53-3340-4de8-ba64-5d112ae306de"
 # Optional for local development with a stable local DB id.
 # preview_database_id = "REPLACE_WITH_PREVIEW_D1_DATABASE_ID"
