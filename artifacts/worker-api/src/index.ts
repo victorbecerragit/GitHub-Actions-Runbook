@@ -7,6 +7,7 @@ import {
 
 interface Env {
   DB: D1Database
+  ADMIN_API_TOKEN: string
 }
 
 const VALID_SEVERITIES: RunbookSeverity[] = ["low", "medium", "high", "critical"]
@@ -206,6 +207,16 @@ function parseListQuery(url: URL):
   }
 }
 
+function isAuthorizedWrite(request: Request, env: Env): boolean {
+  const configuredToken = env.ADMIN_API_TOKEN?.trim()
+  if (!configuredToken) {
+    return false
+  }
+
+  const providedToken = request.headers.get("x-admin-token")?.trim()
+  return providedToken === configuredToken
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url)
@@ -253,6 +264,10 @@ export default {
     }
 
     if (url.pathname === "/api/runbooks" && request.method === "POST") {
+      if (!isAuthorizedWrite(request, env)) {
+        return Response.json({ error: "Unauthorized" }, { status: 401 })
+      }
+
       const body = await request.json().catch(() => null)
       const parsedBody = parseCreateBody(body)
 
@@ -268,6 +283,10 @@ export default {
     }
 
     if (url.pathname === "/api/runbooks/seed" && request.method === "POST") {
+      if (!isAuthorizedWrite(request, env)) {
+        return Response.json({ error: "Unauthorized" }, { status: 401 })
+      }
+
       const existing = await repo.listRunbooks()
 
       if (existing.length > 0) {
@@ -312,6 +331,10 @@ export default {
     }
 
     if (url.pathname.startsWith("/api/runbooks/") && request.method === "PUT") {
+      if (!isAuthorizedWrite(request, env)) {
+        return Response.json({ error: "Unauthorized" }, { status: 401 })
+      }
+
       const id = parseIdFromPath(url.pathname)
       if (id === null) {
         return Response.json({ error: "Invalid ID" }, { status: 400 })
@@ -333,6 +356,10 @@ export default {
     }
 
     if (url.pathname.startsWith("/api/runbooks/") && request.method === "DELETE") {
+      if (!isAuthorizedWrite(request, env)) {
+        return Response.json({ error: "Unauthorized" }, { status: 401 })
+      }
+
       const id = parseIdFromPath(url.pathname)
       if (id === null) {
         return Response.json({ error: "Invalid ID" }, { status: 400 })

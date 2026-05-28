@@ -114,14 +114,17 @@ sed -i 's/database_id = "REPLACE_WITH_D1_DATABASE_ID"/database_id = "YOUR_DATABA
 # 4) Apply remote migrations
 pnpm --filter @workspace/worker-api exec wrangler d1 migrations apply runbook-d1 --remote
 
-# 5) Deploy the Worker
+# 5) Set demo admin write token secret
+pnpm --filter @workspace/worker-api exec wrangler secret put ADMIN_API_TOKEN
+
+# 6) Deploy the Worker
 pnpm --filter @workspace/worker-api run deploy
 ```
 
 Use the deployed worker URL from deploy output (example: https://runbook-worker-api.<your-subdomain>.workers.dev).
 
 ```bash
-# 6) Run frontend against deployed Worker
+# 7) Run frontend against deployed Worker
 VITE_API_BASE_URL="https://runbook-worker-api.<your-subdomain>.workers.dev" \
 pnpm --filter @workspace/runbook run dev
 ```
@@ -159,6 +162,7 @@ pnpm --filter @workspace/runbook run dev
 
 ```bash
 WORKER_URL="https://runbook-worker-api.<your-subdomain>.workers.dev"
+ADMIN_TOKEN="your-admin-token"
 
 # Health
 curl -sS "$WORKER_URL/api/healthz"
@@ -173,6 +177,17 @@ curl -sS "$WORKER_URL/api/runbooks?search=verify"
 
 # Stats
 curl -sS "$WORKER_URL/api/runbooks/stats"
+
+# Unauthorized write (expected: 401)
+curl -i -sS -X POST "$WORKER_URL/api/runbooks" \
+  -H 'Content-Type: application/json' \
+  --data '{"title":"Unauthorized demo write","system":"Cloudflare Workers","severity":"low","steps":"n/a","rollback":"n/a","tags":[]}'
+
+# Authorized write (expected: 201)
+curl -i -sS -X POST "$WORKER_URL/api/runbooks" \
+  -H 'Content-Type: application/json' \
+  -H "x-admin-token: $ADMIN_TOKEN" \
+  --data '{"title":"Authorized demo write","system":"Cloudflare Workers","severity":"low","steps":"n/a","rollback":"n/a","tags":["demo"]}'
 ```
 
 UI verification (frontend running with VITE_API_BASE_URL):

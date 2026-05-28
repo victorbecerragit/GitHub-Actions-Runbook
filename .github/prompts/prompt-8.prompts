@@ -1,0 +1,18 @@
+Prepare this project for a safe public live demo with GitHub Pages + Cloudflare Worker + D1.
+
+Tasks:
+1. Add basic protection for Worker write routes:
+   - protect POST /api/runbooks
+   - protect PUT /api/runbooks/:id
+   - protect DELETE /api/runbooks/:id
+   - protect POST /api/runbooks/seed
+2. Keep GET routes public for demo browsing
+3. Use a Worker secret such as ADMIN_API_TOKEN and require a request header like x-admin-token for write operations
+4. Return 401 for missing or invalid token
+5. Keep changes minimal and do not redesign the app
+6. Update README with how to set the secret using Wrangler
+
+After coding:
+- list exact files changed
+- show how to set the Worker secret
+- show sample curl commands for an authorized write and an unauthorized write
