@@ -10,6 +10,10 @@ interface Env {
   ADMIN_API_TOKEN: string
 }
 
+const ALLOWED_CORS_ORIGIN = "https://victorbecerragit.github.io"
+const ALLOWED_CORS_METHODS = "GET, POST, PUT, DELETE, OPTIONS"
+const ALLOWED_CORS_HEADERS = "Content-Type, x-admin-token"
+
 const VALID_SEVERITIES: RunbookSeverity[] = ["low", "medium", "high", "critical"]
 
 const SEED_DATA: CreateRunbookInput[] = [
@@ -217,19 +221,63 @@ function isAuthorizedWrite(request: Request, env: Env): boolean {
   return providedToken === configuredToken
 }
 
+function getCorsHeaders(request: Request): HeadersInit {
+  const origin = request.headers.get("Origin")
+
+  if (origin !== ALLOWED_CORS_ORIGIN) {
+    return {}
+  }
+
+  return {
+    "Access-Control-Allow-Origin": ALLOWED_CORS_ORIGIN,
+    "Access-Control-Allow-Methods": ALLOWED_CORS_METHODS,
+    "Access-Control-Allow-Headers": ALLOWED_CORS_HEADERS,
+    "Access-Control-Max-Age": "86400",
+    Vary: "Origin",
+  }
+}
+
+function withCors(request: Request, response: Response): Response {
+  const corsHeaders = getCorsHeaders(request)
+
+  if (Object.keys(corsHeaders).length === 0) {
+    return response
+  }
+
+  const headers = new Headers(response.headers)
+
+  for (const [key, value] of Object.entries(corsHeaders)) {
+    headers.set(key, value)
+  }
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  })
+}
+
+function jsonResponse(request: Request, body: unknown, init?: ResponseInit): Response {
+  return withCors(request, Response.json(body, init))
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url)
     const repo = new RunbooksRepository(env.DB)
 
+    if (request.method === "OPTIONS") {
+      return withCors(request, new Response(null, { status: 204 }))
+    }
+
     if (url.pathname === "/api/healthz") {
-      return Response.json({ status: "ok" })
+      return jsonResponse(request, { status: "ok" })
     }
 
     if (url.pathname === "/api/runbooks" && request.method === "GET") {
       const parsedQuery = parseListQuery(url)
       if (!parsedQuery.ok) {
-        return Response.json({ error: "Invalid query parameters" }, { status: 400 })
+        return jsonResponse(request, { error: "Invalid query parameters" }, { status: 400 })
       }
 
       const rows = await repo.listRunbooks()
@@ -260,44 +308,45 @@ export default {
         filtered = filtered.filter((r) => r.tags.includes(tag))
       }
 
-      return Response.json(filtered)
+      return jsonResponse(request, filtered)
     }
 
     if (url.pathname === "/api/runbooks" && request.method === "POST") {
       if (!isAuthorizedWrite(request, env)) {
-        return Response.json({ error: "Unauthorized" }, { status: 401 })
+        return jsonResponse(request, { error: "Unauthorized" }, { status: 401 })
       }
 
       const body = await request.json().catch(() => null)
       const parsedBody = parseCreateBody(body)
 
       if (!parsedBody.ok) {
-        return Response.json(
+        return jsonResponse(
+          request,
           { error: "Validation failed", details: parsedBody.details },
           { status: 400 },
         )
       }
 
       const created = await repo.createRunbook(parsedBody.data)
-      return Response.json(created, { status: 201 })
+      return jsonResponse(request, created, { status: 201 })
     }
 
     if (url.pathname === "/api/runbooks/seed" && request.method === "POST") {
       if (!isAuthorizedWrite(request, env)) {
-        return Response.json({ error: "Unauthorized" }, { status: 401 })
+        return jsonResponse(request, { error: "Unauthorized" }, { status: 401 })
       }
 
       const existing = await repo.listRunbooks()
 
       if (existing.length > 0) {
-        return Response.json({ inserted: 0, message: "Runbooks already exist, skipping seed." })
+        return jsonResponse(request, { inserted: 0, message: "Runbooks already exist, skipping seed." })
       }
 
       for (const entry of SEED_DATA) {
         await repo.createRunbook(entry)
       }
 
-      return Response.json({ inserted: SEED_DATA.length, message: `Seeded ${SEED_DATA.length} runbooks.` })
+      return jsonResponse(request, { inserted: SEED_DATA.length, message: `Seeded ${SEED_DATA.length} runbooks.` })
     }
 
     if (url.pathname === "/api/runbooks/stats" && request.method === "GET") {
@@ -311,71 +360,71 @@ export default {
         bySystem[row.system] = (bySystem[row.system] ?? 0) + 1
       }
 
-      return Response.json({ total: rows.length, bySeverity, bySystem })
+      return jsonResponse(request, { total: rows.length, bySeverity, bySystem })
     }
 
     if (url.pathname.startsWith("/api/runbooks/") && request.method === "GET") {
       const id = parseIdFromPath(url.pathname)
 
       if (id === null) {
-        return Response.json({ error: "Invalid ID" }, { status: 400 })
+        return jsonResponse(request, { error: "Invalid ID" }, { status: 400 })
       }
 
       const runbook = await repo.getRunbookById(id)
 
       if (!runbook) {
-        return Response.json({ error: "Runbook not found" }, { status: 404 })
+        return jsonResponse(request, { error: "Runbook not found" }, { status: 404 })
       }
 
-      return Response.json(runbook)
+      return jsonResponse(request, runbook)
     }
 
     if (url.pathname.startsWith("/api/runbooks/") && request.method === "PUT") {
       if (!isAuthorizedWrite(request, env)) {
-        return Response.json({ error: "Unauthorized" }, { status: 401 })
+        return jsonResponse(request, { error: "Unauthorized" }, { status: 401 })
       }
 
       const id = parseIdFromPath(url.pathname)
       if (id === null) {
-        return Response.json({ error: "Invalid ID" }, { status: 400 })
+        return jsonResponse(request, { error: "Invalid ID" }, { status: 400 })
       }
 
       const body = await request.json().catch(() => null)
       const parsedBody = parseUpdateBody(body)
 
       if (!parsedBody.ok) {
-        return Response.json({ error: "Validation failed" }, { status: 400 })
+        return jsonResponse(request, { error: "Validation failed" }, { status: 400 })
       }
 
       const updated = await repo.updateRunbook(id, parsedBody.data)
       if (!updated) {
-        return Response.json({ error: "Runbook not found" }, { status: 404 })
+        return jsonResponse(request, { error: "Runbook not found" }, { status: 404 })
       }
 
-      return Response.json(updated)
+      return jsonResponse(request, updated)
     }
 
     if (url.pathname.startsWith("/api/runbooks/") && request.method === "DELETE") {
       if (!isAuthorizedWrite(request, env)) {
-        return Response.json({ error: "Unauthorized" }, { status: 401 })
+        return jsonResponse(request, { error: "Unauthorized" }, { status: 401 })
       }
 
       const id = parseIdFromPath(url.pathname)
       if (id === null) {
-        return Response.json({ error: "Invalid ID" }, { status: 400 })
+        return jsonResponse(request, { error: "Invalid ID" }, { status: 400 })
       }
 
       const deleted = await repo.deleteRunbook(id)
       if (!deleted) {
-        return Response.json({ error: "Runbook not found" }, { status: 404 })
+        return jsonResponse(request, { error: "Runbook not found" }, { status: 404 })
       }
 
-      return new Response(null, { status: 204 })
+      return withCors(request, new Response(null, { status: 204 }))
     }
 
-    return new Response("Worker foundation ready", {
+    return withCors(request, new Response("Worker foundation ready", {
       status: 200,
       headers: { "content-type": "text/plain; charset=utf-8" },
-    })
+    }))
   },
 } satisfies ExportedHandler
