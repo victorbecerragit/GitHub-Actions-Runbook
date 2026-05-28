@@ -3,6 +3,7 @@ import {
   useCreateRunbook,
   useUpdateRunbook,
   useGetRunbook,
+  getGetRunbookQueryKey,
   getListRunbooksQueryKey,
   getGetRunbookStatsQueryKey,
 } from "@workspace/api-client-react";
@@ -40,10 +41,7 @@ const runbookSchema = z.object({
   severity: z.enum(["low", "medium", "high", "critical"]),
   steps: z.string().min(1, "Steps are required"),
   rollback: z.string(),
-  tags: z
-    .string()
-    .transform((val) => val.split(",").map((t) => t.trim()).filter(Boolean))
-    .or(z.array(z.string())),
+  tags: z.string(),
 });
 
 type RunbookFormValues = z.infer<typeof runbookSchema>;
@@ -87,7 +85,10 @@ function RunbookFormInner({
   });
 
   const onSubmit = (values: RunbookFormValues) => {
-    const tags = Array.isArray(values.tags) ? values.tags : [];
+    const tags = values.tags
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter(Boolean);
     const data = { ...values, tags };
 
     if (isEdit) {
@@ -233,11 +234,6 @@ function RunbookFormInner({
                         placeholder="e.g. database, tier-1, networking (comma separated)"
                         className="bg-background border-border rounded-sm font-sans"
                         {...field}
-                        value={
-                          Array.isArray(field.value)
-                            ? field.value.join(", ")
-                            : field.value
-                        }
                       />
                     </FormControl>
                     <FormDescription className="text-[10px]">
@@ -316,7 +312,10 @@ function RunbookFormInner({
 
 function EditFormLoader({ id }: { id: string }) {
   const { data: runbook, isLoading } = useGetRunbook(Number(id), {
-    query: { enabled: true },
+    query: {
+      enabled: true,
+      queryKey: getGetRunbookQueryKey(Number(id)),
+    },
   });
 
   if (isLoading || !runbook) {

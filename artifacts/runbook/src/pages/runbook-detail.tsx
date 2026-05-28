@@ -1,5 +1,5 @@
 import { Layout } from "@/components/layout";
-import { useGetRunbook, useDeleteRunbook, getListRunbooksQueryKey, getGetRunbookStatsQueryKey } from "@workspace/api-client-react";
+import { useGetRunbook, useDeleteRunbook, getListRunbooksQueryKey, getGetRunbookStatsQueryKey, getGetRunbookQueryKey } from "@workspace/api-client-react";
 import { useParams, useLocation, Link } from "wouter";
 import { ArrowLeft, Edit, Trash2, Clock, Terminal, AlertTriangle, ShieldCheck, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,8 @@ export function RunbookDetail() {
   
   const { data: runbook, isLoading, isError } = useGetRunbook(Number(id), {
     query: {
-      enabled: !!id
+      enabled: !!id,
+      queryKey: getGetRunbookQueryKey(Number(id)),
     }
   });
 
