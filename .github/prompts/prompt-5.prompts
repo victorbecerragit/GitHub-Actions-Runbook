@@ -1,0 +1,19 @@
+Implement the Worker-side D1 data access layer for runbooks.
+
+Tasks:
+1. Create a small repository/service module in artifacts/worker-api for D1 access
+2. Support:
+   - list runbooks
+   - get runbook by id
+   - create runbook
+   - update runbook
+   - delete runbook
+3. Keep SQL simple and readable
+4. Preserve current fields and API response shapes as much as possible
+5. Do not connect the frontend yet
+6. Do not delete Express/PostgreSQL code yet
+
+After coding:
+- list new files
+- explain any differences between PostgreSQL and D1 handling
+- show how I can smoke-test one read and one write locally

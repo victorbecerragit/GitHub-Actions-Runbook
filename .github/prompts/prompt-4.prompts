@@ -1,0 +1,14 @@
+Now implement only the D1 schema setup.
+
+Tasks:
+1. Inspect the current PostgreSQL/Drizzle runbook schema
+2. Create an initial Cloudflare D1 SQL migration for the runbooks table
+3. Preserve the current fields and CRUD behavior
+4. Keep the schema simple for v1
+5. Do not migrate the API yet
+6. Do not remove existing PostgreSQL code yet
+
+Output:
+- show the new migration file
+- explain any SQLite/D1 differences from PostgreSQL
+- provide the exact wrangler commands to apply the migration locally and remotely

@@ -1,0 +1,13 @@
+name = "runbook-worker-api"
+main = "src/index.ts"
+compatibility_date = "2026-05-27"
+
+# Keep this Worker package isolated while Express remains in place.
+
+[[d1_databases]]
+binding = "DB"
+database_name = "runbook-d1"
+# TODO: Replace with your real D1 database id from `wrangler d1 create`.
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+# Optional for local development with a stable local DB id.
+# preview_database_id = "REPLACE_WITH_PREVIEW_D1_DATABASE_ID"

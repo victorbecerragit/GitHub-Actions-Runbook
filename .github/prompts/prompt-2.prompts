@@ -1,0 +1,10 @@
+Create a migration plan in code structure only.
+
+Tasks:
+1. identify all Replit-specific backend/runtime dependencies
+2. propose the target Cloudflare structure
+3. list exact files to create, move, or delete
+4. keep frontend unchanged as much as possible
+5. prefer one Worker backend and D1 for persistence
+
+Do not implement yet.

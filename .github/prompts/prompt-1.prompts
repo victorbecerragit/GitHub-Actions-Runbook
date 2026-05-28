@@ -1,0 +1,10 @@
+Inspect this repository and summarize the current architecture.
+
+Tell me:
+1. frontend framework and entry points
+2. current backend/API structure
+3. current database access pattern
+4. which parts are Replit-specific
+5. the smallest migration plan to Cloudflare Workers + D1 without rewriting the UI
+
+Do not change code yet.

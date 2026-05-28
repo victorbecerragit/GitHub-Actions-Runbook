@@ -1,0 +1,23 @@
+Implement only the Cloudflare foundation for this repository.
+
+Context:
+- GitHub is the source of truth
+- keep the current frontend untouched
+- do not migrate the Express API yet
+- do not remove PostgreSQL code yet
+- do not rewrite the monorepo
+
+Tasks:
+1. Add the minimum Cloudflare Workers + D1 project setup for this pnpm workspace
+2. Create a wrangler.toml at the repo root or the most appropriate package location
+3. Add D1 binding placeholders and comments for where I will insert the database id
+4. Add package.json scripts for local Cloudflare development and deployment
+5. Keep all changes minimal and isolated
+6. Explain which package should own the Worker runtime
+
+Output:
+- show exact files changed
+- explain the recommended location of the Worker code
+- give me the exact commands to create the D1 database and update wrangler.toml
+
+Do not migrate routes or database access yet.

@@ -27,9 +27,9 @@ During incidents, engineers need to find the right runbook fast. This tool provi
 | Data fetching | TanStack Query v5 |
 | Forms | react-hook-form + Zod |
 | UI components | shadcn/ui (Radix UI primitives + Tailwind CSS) |
-| Backend | Express 5, Node.js 24, TypeScript |
+| Backend | Cloudflare Workers (primary), Express 5 (legacy) |
 | ORM | Drizzle ORM |
-| Database | PostgreSQL |
+| Database | Cloudflare D1 (primary), PostgreSQL (legacy) |
 | Validation | Zod (shared schemas generated from OpenAPI spec) |
 | API contract | OpenAPI 3.1 spec → Orval codegen (hooks + Zod schemas) |
 | Monorepo | pnpm workspaces |
@@ -91,40 +91,99 @@ artifacts/
 
 ---
 
-## Local setup
+## Cloudflare Worker + D1 (Primary Setup and Deployment)
 
-**Prerequisites:** Node.js 24, pnpm 9+, a PostgreSQL database
+Prerequisites: Node.js 24, pnpm 9+, Cloudflare account, Wrangler authenticated.
 
 ```bash
-# 1. Install dependencies
+# 1) Install dependencies
 pnpm install
 
-# 2. Set the database connection string
-#    Create a .env file or export directly:
-export DATABASE_URL="postgresql://user:password@localhost:5432/runbook"
+# 2) Create the remote D1 database
+pnpm --filter @workspace/worker-api exec wrangler d1 create runbook-d1
+```
 
-# 3. Push the database schema (first time, or after schema changes)
-pnpm --filter @workspace/db run push
+After create, copy the returned database id.
 
-# 4. Start the API server (binds to PORT env var, default 5000)
-pnpm --filter @workspace/api-server run dev
+```bash
+# 3) Update wrangler.toml with the real database id
+sed -i 's/database_id = "REPLACE_WITH_D1_DATABASE_ID"/database_id = "YOUR_DATABASE_ID"/' artifacts/worker-api/wrangler.toml
+```
 
-# 5. Start the frontend (binds to PORT env var)
+```bash
+# 4) Apply remote migrations
+pnpm --filter @workspace/worker-api exec wrangler d1 migrations apply runbook-d1 --remote
+
+# 5) Deploy the Worker
+pnpm --filter @workspace/worker-api run deploy
+```
+
+Use the deployed worker URL from deploy output (example: https://runbook-worker-api.<your-subdomain>.workers.dev).
+
+```bash
+# 6) Run frontend against deployed Worker
+VITE_API_BASE_URL="https://runbook-worker-api.<your-subdomain>.workers.dev" \
 pnpm --filter @workspace/runbook run dev
 ```
 
-Both services run independently. In development, a shared reverse proxy routes `/api/*` to the API server and `/` to the frontend.
+Optional (local Worker path):
 
 ```bash
-# Seed 5 example runbooks (idempotent — safe to call repeatedly)
-curl -X POST http://localhost/api/runbooks/seed
-
-# Full TypeScript typecheck across all packages
-pnpm run typecheck
-
-# Regenerate API hooks and Zod schemas after editing openapi.yaml
-pnpm --filter @workspace/api-spec run codegen
+pnpm --filter @workspace/worker-api run dev -- --port 8787 --local
+pnpm --filter @workspace/runbook run dev
 ```
+
+---
+
+## Legacy Express + PostgreSQL (Secondary Path)
+
+Use this only if you need the legacy backend during migration.
+
+```bash
+# 1) Set PostgreSQL connection
+export DATABASE_URL="postgresql://user:password@localhost:5432/runbook"
+
+# 2) Push schema
+pnpm --filter @workspace/db run push
+
+# 3) Start Express API
+pnpm --filter @workspace/api-server run dev
+
+# 4) Start frontend
+pnpm --filter @workspace/runbook run dev
+```
+
+---
+
+## Post-Deploy Verification Checklist (Worker)
+
+```bash
+WORKER_URL="https://runbook-worker-api.<your-subdomain>.workers.dev"
+
+# Health
+curl -sS "$WORKER_URL/api/healthz"
+
+# Create
+curl -sS -X POST "$WORKER_URL/api/runbooks" \
+  -H 'Content-Type: application/json' \
+  --data '{"title":"Deploy verify","system":"Cloudflare Workers","severity":"low","steps":"1. verify create","rollback":"1. delete record","tags":["verify","deploy"]}'
+
+# Search
+curl -sS "$WORKER_URL/api/runbooks?search=verify"
+
+# Stats
+curl -sS "$WORKER_URL/api/runbooks/stats"
+```
+
+UI verification (frontend running with VITE_API_BASE_URL):
+
+1. Create runbook from New Runbook page and confirm detail page opens.
+2. Edit runbook fields and confirm updated values render on detail and list.
+3. Delete runbook and confirm it disappears from the list.
+4. Search by title or tag and confirm filtered results.
+5. Confirm stats panel updates after create/edit/delete.
+
+More migration details and local/remote notes: [docs/plans/2026-05-27-cloudflare-worker-d1-migration.md](docs/plans/2026-05-27-cloudflare-worker-d1-migration.md)
 
 ---
 

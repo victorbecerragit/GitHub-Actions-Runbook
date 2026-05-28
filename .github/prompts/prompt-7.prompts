@@ -1,0 +1,15 @@
+Wire the existing frontend to the Cloudflare Worker API with minimal changes.
+
+Tasks:
+1. Inspect how the frontend currently calls the API
+2. Update the frontend dev/proxy/runtime configuration so /api requests go to the Worker locally
+3. Keep the current UI, routes, forms, and pages unchanged
+4. Do not redesign anything
+5. Do not remove the Express API yet
+6. Keep the API contract unchanged as much as possible
+
+After coding:
+- list exact files changed
+- explain how to run the frontend and Worker together locally
+- show the exact local URLs and commands
+- tell me how to manually verify create, edit, delete, search, and stats from the UI

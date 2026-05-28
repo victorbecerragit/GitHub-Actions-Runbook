@@ -1,0 +1,22 @@
+Implement the real Worker runbook API routes using the existing D1 repository.
+
+Tasks:
+1. Add Worker handlers for:
+   - GET /api/runbooks
+   - GET /api/runbooks/:id
+   - POST /api/runbooks
+   - PUT /api/runbooks/:id
+   - DELETE /api/runbooks/:id
+   - GET /api/runbooks/stats
+   - POST /api/runbooks/seed
+2. Preserve the current API response shapes and status codes as closely as possible
+3. Reuse the existing RunbooksRepository
+4. Keep routing simple in the Worker entrypoint or split into small route helpers if needed
+5. Do not wire the frontend yet
+6. Do not remove the Express API yet
+7. Keep validation minimal but safe
+
+After coding:
+- list exact files changed
+- show how to test each Worker route locally with curl
+- note any response shape differences from the Express version
