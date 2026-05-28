@@ -1,5 +1,12 @@
 # GitHub Actions Runbook
 
+[![Worker Deploy](https://github.com/victorbecerragit/GitHub-Actions-Runbook/actions/workflows/deploy-worker.yml/badge.svg?branch=main)](https://github.com/victorbecerragit/GitHub-Actions-Runbook/actions/workflows/deploy-worker.yml)
+[![Frontend Deploy](https://github.com/victorbecerragit/GitHub-Actions-Runbook/actions/workflows/deploy-frontend-pages.yml/badge.svg?branch=main)](https://github.com/victorbecerragit/GitHub-Actions-Runbook/actions/workflows/deploy-frontend-pages.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/victorbecerragit/GitHub-Actions-Runbook/blob/main/LICENSE)
+[![GitHub last commit](https://img.shields.io/github/last-commit/victorbecerragit/GitHub-Actions-Runbook)](https://github.com/victorbecerragit/GitHub-Actions-Runbook/commits/main)
+[![GitHub issues](https://img.shields.io/github/issues/victorbecerragit/GitHub-Actions-Runbook)](https://github.com/victorbecerragit/GitHub-Actions-Runbook/issues)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/victorbecerragit/GitHub-Actions-Runbook/pulls)
+
 A full-stack internal tool for storing and retrieving operational runbooks for CI/CD pipelines. Built for DevOps and SRE teams who need fast, searchable access to step-by-step incident procedures.
 
 > **Scaffolding note:** The initial project structure was generated using Replit's agent scaffolding (monorepo layout, OpenAPI codegen pipeline, shadcn/ui component library). All application logic, data model design, API route implementation, seed data, bug fixes, and manual verification were performed and validated by the developer. The severity-dropdown regression in the edit form was identified and fixed during manual QA.
